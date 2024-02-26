@@ -59,6 +59,46 @@ pub mod jupiter_override {
     use anchor_lang::{prelude::*, Discriminator};
     use jupiter_amm_interface::Swap as InterfaceSwap;
 
+    pub enum InstructionVariant {
+        Route(super::instruction::Route),
+        SharedAccountsRoute(super::instruction::SharedAccountsRoute),
+        SharedAccountsExactOutRoute(super::instruction::SharedAccountsExactOutRoute),
+        SharedAccountsRouteWithTokenLedger(super::instruction::SharedAccountsRouteWithTokenLedger),
+        RouteWithTokenLedger(super::instruction::RouteWithTokenLedger),
+    }
+
+    pub fn get_ix(ix_data: &mut &[u8]) -> Option<InstructionVariant> {
+        let discriminator: [u8; 8] = ix_data[0..8].try_into().unwrap();
+        match discriminator {
+            super::instruction::Route::DISCRIMINATOR => {
+                return super::instruction::Route::deserialize(ix_data)
+                    .ok()
+                    .map(InstructionVariant::Route)
+            }
+            super::instruction::SharedAccountsRoute::DISCRIMINATOR => {
+                return super::instruction::SharedAccountsRoute::deserialize(ix_data)
+                    .ok()
+                    .map(InstructionVariant::SharedAccountsRoute)
+            }
+            super::instruction::SharedAccountsExactOutRoute::DISCRIMINATOR => {
+                super::instruction::SharedAccountsExactOutRoute::deserialize(ix_data)
+                    .ok()
+                    .map(InstructionVariant::SharedAccountsExactOutRoute)
+            }
+            super::instruction::SharedAccountsRouteWithTokenLedger::DISCRIMINATOR => {
+                super::instruction::SharedAccountsRouteWithTokenLedger::deserialize(ix_data)
+                    .ok()
+                    .map(InstructionVariant::SharedAccountsRouteWithTokenLedger)
+            }
+            super::instruction::RouteWithTokenLedger::DISCRIMINATOR => {
+                super::instruction::RouteWithTokenLedger::deserialize(ix_data)
+                    .ok()
+                    .map(InstructionVariant::RouteWithTokenLedger)
+            }
+            _ => None,
+        }
+    }
+
     #[derive(AnchorSerialize, Debug)]
     pub struct RoutePlanStep {
         pub swap: InterfaceSwap,
